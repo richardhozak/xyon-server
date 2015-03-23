@@ -47,7 +47,10 @@ class LinkHost:
                     'id': href[26:] if is_list else href[9:],
                     'title': result['title']}
 
-        query_string = urllib.parse.urlencode({"search_query": query})
+        print("search query", query)
+        query_string = urllib.parse.urlencode(query)  # {"search_query": query}
+        print("query_string", query_string)
+
         html_content = urllib.request.urlopen(
             "http://www.youtube.com/results?" + query_string)
         soup = BeautifulSoup(html_content.read().decode())
@@ -55,12 +58,19 @@ class LinkHost:
         return list(map(create_query_object, search_results))
 
     def get_stream_link(self, vid):
-        print("Getting audio stream link", vid)
         video = pafy.new(vid)
+        print("Getting audio stream link", vid)
         audio = video.getbestaudio(preftype="ogg")
-        print(audio.url_https)
-        print(audio.extension)
-        return audio.url
+        if hasattr(audio, 'url_https'):
+            print("has attribute")
+            print(audio.url_https)
+            print(audio.extension)
+            return audio.url
+        else:
+            print("does not have attribute")
+            best = video.getbest()
+            print(best)
+            return best.url_https
 
 
 if __name__ == "__main__":
@@ -74,4 +84,3 @@ if __name__ == "__main__":
         server.serve_forever()
     except KeyboardInterrupt:
         sys.exit(0)
-
