@@ -22,7 +22,7 @@ class AudioTcpHandler(socketserver.StreamRequestHandler):
                 search_response = self.server.youtube.dict[d['method']](d['params'])
                 method_response = {"method": "response_" + d['method'], "params": search_response}
                 json_response = json.dumps(method_response).encode('utf-8')
-                print(json_response)
+                # print(json_response)
                 self.wfile.write(json_response)
         except:
             print("Client", self.client_address[0], "disconnected")
@@ -41,11 +41,21 @@ class LinkHost:
 
     def search(self, query):
         def create_query_object(result):
+            time = result.parent.parent.parent.find("span", {"class": "video-time"})
+            if time is None:
+                time = ""
+            else:
+                time = time.text
+
+            # print("\n\n\nparent:", result.parent.parent.parent.find("span", {"class": "video-time"}).text)
+            # print("title", result["title"])
+            print(time, result["title"])
             href = result['href']
             is_list = 'list' in href
             return {'type': 'list' if is_list else 'video',
                     'id': href[26:] if is_list else href[9:],
-                    'title': result['title']}
+                    'title': result['title'],
+                    'time': time}
 
         print("search query", query)
         query_string = urllib.parse.urlencode(query)  # {"search_query": query}
@@ -56,6 +66,9 @@ class LinkHost:
         soup = BeautifulSoup(html_content.read().decode())
         search_results = soup.find_all("a", {"class": "yt-uix-tile-link"})
         return list(map(create_query_object, search_results))
+
+    def resolve_url(self, vid):
+        return self.get_stream_link(vid)
 
     def get_stream_link(self, vid):
         video = pafy.new(vid)
